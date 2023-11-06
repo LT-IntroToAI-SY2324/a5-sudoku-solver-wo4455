@@ -139,11 +139,21 @@ class Board:
             column - index of the column to assign
             assignment - value to place at given row, column coordinate
         """
-        pass
+        self.rows[row][column] = assignment
+        self.num_nums_placed += 1
+
+        for i in range(self.size):
+            remove_if_exists(self.rows[row][i], assignment)
+            remove_if_exists(self.rows[i][column], assignment)
+        
+        # print(self.subgrid_coordinates(row, column))
+        for i, j in self.subgrid_coordinates(row,column):
+            # print(i, j)
+            remove_if_exists(self.rows[i][j], assignment)
 
 
 def DFS(state: Board) -> Board:
-    """Performs a depth first search. Takes a Board and attempts to assign values to
+    """Performs a depth first search. Takes a Board and attempt s to assign values to
     most constrained cells until a solution is reached or a mistake has been made at
     which point it backtracks.
 
@@ -173,6 +183,15 @@ def BFS(state: Board) -> Board:
 
 
 if __name__ == "__main__":
+    b = Board()
+    print(b)
+    b.print_pretty()
+    b.update(0,0,4)
+    b.update(2,1,7)
+    b.update(0,5,1)
+    b.update(7,1,8)
+    b.print_pretty()
+    print(b)
     # uncomment the below lines once you've implemented the board class
    
     # # CODE BELOW HERE RUNS YOUR BFS/DFS
