@@ -164,7 +164,24 @@ def DFS(state: Board) -> Board:
     Returns:
         either None in the case of invalid input or a solved board
     """
-    pass
+
+    the_stack = Stack([state])
+    # print(the_stack)
+    while not the_stack.is_empty():
+        curr = the_stack.pop()
+        # print(curr)
+        if curr.goal_test():
+            return curr
+        elif not curr.failure_test():
+            row, col = curr.find_most_constrained_cell()
+            sel = curr.rows[row][col]
+            for el in sel:
+                cpy = copy.deepcopy(curr)
+                cpy.update(row, col, el)
+                the_stack.push(cpy)
+                print(row, col, el)
+            print(row, col, sel)
+    return None
 
 
 def BFS(state: Board) -> Board:
@@ -273,13 +290,17 @@ if __name__ == "__main__":
     #     (8, 5, 7),
     #     (8, 7, 5),
     # ]
-    # #Create a sudoku board.
-    # b = Board()
-    # #Place the 28 assignments in first_moves on the board.
-    # for trip in first_moves:
-    #     b.rows[trip[0]][trip[1]] = trip[2]
-    # #NOTE - the above code only *puts* the numbers on the board, but doesn't
-    # #   do the work that update does (remove numbers from other lists, etc).
+    #Create a sudoku board.
+    b = Board()
+    #Place the 28 assignments in first_moves on the board.
+    for trip in first_moves:
+        b.rows[trip[0]][trip[1]] = trip[2]
+    b.print_pretty()
+    print(b)
+    sol = DFS(b)
+    sol.print_pretty()
+    #NOTE - the above code only *puts* the numbers on the board, but doesn't
+    #   do the work that update does (remove numbers from other lists, etc).
 
     # #I'm going to now alter 3 lists on the board to make them shorter (more
     # #   constrained. 
