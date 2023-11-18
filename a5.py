@@ -1,15 +1,14 @@
-import copy
+import copy  
 from typing import List, Any, Tuple
+
 from stack_and_queue import Stack, Queue
 
-# HELPER FUNCTION TO REMOVE ITEMS FROM A LIST
 def remove_if_exists(lst: Any, elem: Any) -> None:
     if isinstance(lst, list) and elem in lst:
         lst.remove(elem)
 
 
 class Board:
-
     def __init__(self):
         self.size: int = 9
         self.num_nums_placed: int = 0
@@ -21,7 +20,6 @@ class Board:
         row_str = ""
         for r in self.rows:
             row_str += f"{r}\n"
-
         return f"num_nums_placed: {self.num_nums_placed}\nboard (rows): \n{row_str}"
 
     def print_pretty(self):
@@ -35,7 +33,6 @@ class Board:
                 row_str += "*" if isinstance(x, list) else f"{x}"
 
             row_str += " |\n"
-
         row_str += " -------------------------\n"
         print(f"num_nums_placed: {self.num_nums_placed}\nboard (rows): \n{row_str}")
 
@@ -43,124 +40,87 @@ class Board:
         subgrids = [(0, 1, 2), (3, 4, 5), (6, 7, 8)]
         return [(r, c) for c in subgrids[col // 3] for r in subgrids[row // 3]]
 
-    def find_most_constrained_cell(self) -> Tuple[int, int]:
-        """Finds the coordinates (row and column indices) of the cell that contains the
-        fewest possible values to assign (the shortest list). Note: in the case of ties
-        return the coordinates of the first minimum size cell found
-
-        Returns:
-            a tuple of row, column index identifying the most constrained cell
-        """
-        pass
+    def find_most_constrained_cell(self) -> Tuple[int, int]:  
+        least = (0, 0)
+        current = 9
+        for row in range(len(self.rows)):
+            for col in range(len(self.rows[row])):
+                if isinstance(self.rows[row][col], list) and len(self.rows[row][col]) < current:
+                    least = (row, col)
+                    current = len(self.rows[row][col])
+        return least
 
     def failure_test(self) -> bool:
-        """Check if we've failed to correctly fill out the puzzle. If we find a cell
-        that contains an [], then we have no more possibilities for the cell but haven't
-        assigned it a value so fail.
-
-        Returns:
-            True if we have failed to fill out the puzzle, False otherwise
-        """
-        pass
+        for row in range(len(self.rows)):
+            for col in range(len(self.rows[row])):
+                if type(self.rows[row][col]) is list and not len(self.rows[row][col]):
+                    return True
+        return False
 
     def goal_test(self) -> bool:
-        """Check if we've completed the puzzle (if we've placed all the numbers).
-        Naively checks that we've placed as many numbers as cells on the board
-
-        Returns:
-            True if we've placed all numbers, False otherwise
-        """
-        pass
+        return self.num_nums_placed == self.size ** 2
 
     def update(self, row: int, column: int, assignment: int) -> None:
         self.rows[row][column] = assignment
         self.num_nums_placed += 1
 
-        for i in range(self.size):
-            remove_if_exists(self.rows[row][i], assignment)
-            remove_if_exists(self.rows[i][column], assignment)
+        for c in self.rows[row]:
+            remove_if_exists(c, assignment)
         
-        # print(self.subgrid_coordinates(row, column))
-        for i, j in self.subgrid_coordinates(row,column):
-            # print(i, j)
-            remove_if_exists(self.rows[i][j], assignment)
+        for r in self.rows:
+            remove_if_exists(r[column], assignment)
+        
+        for coord in self.subgrid_coordinates(row, column):
+            remove_if_exists(self.rows[coord[0]][coord[1]], assignment)
 
 
 def DFS(state: Board) -> Board:
-    the_stack = Stack([state])
-    count = 0
-    # print(the_stack)
-    while not the_stack.is_empty():
-        curr = the_stack.pop()
-        count += 1
-        # print(curr)
+    lst = Stack([state])
+    while not lst.is_empty():
+        curr = lst.pop()
         if curr.goal_test():
-            print(f"it took {count} iterations to solve")
             return curr
         elif not curr.failure_test():
             row, col = curr.find_most_constrained_cell()
-            mcc = curr.rows[row][col]
-            for sel in mcc:
+            for sel in curr.rows[row][col]:
                 cpy = copy.deepcopy(curr)
-                cpy.update(row, col, mcc)
-                the_stack.push(cpy)
+                cpy.update(row, col, sel)
+                lst.push(cpy)
     return None
 
 
 def BFS(state: Board) -> Board:
-    the_queue = Queue([state])
-    count = 0
-    # print(the_stack)
-    while not the_queue.is_empty():
-        curr = the_queue.pop()
-        count += 1
-        # print(curr)
+    lst = Queue([state])
+    while not lst.is_empty():
+        curr = lst.pop()
         if curr.goal_test():
-            print(f"it took {count} iterations to solve")
             return curr
         elif not curr.failure_test():
             row, col = curr.find_most_constrained_cell()
-            mcc = curr.rows[row][col]
-            for sel in mcc:
+            for sel in curr.rows[row][col]:
                 cpy = copy.deepcopy(curr)
-                cpy.update(row, col, mcc)
-                the_queue.push(cpy)
-    
+                cpy.update(row, col, sel)
+                lst.push(cpy)
     return None
 
 
-
 if __name__ == "__main__":
-    b = Board()
-    print(b)
-    b.print_pretty()
-    b.update(0,0,4)
-    b.update(2,1,7)
-    b.update(0,5,1)
-    b.update(7,1,8)
-    b.print_pretty()
-    print(b)
-    # uncomment the below lines once you've implemented the board class
-   
-    # # CODE BELOW HERE RUNS YOUR BFS/DFS
     print("<<<<<<<<<<<<<< Solving Sudoku >>>>>>>>>>>>>>")
 
     def test_dfs_or_bfs(use_dfs: bool, moves: List[Tuple[int, int, int]]) -> None:
         b = Board()
-        # make initial moves to set up board
+        
         for move in moves:
             b.update(*move)
 
-        # print initial board
         print("<<<<< Initial Board >>>>>")
         b.print_pretty()
-        # solve board
+        
         solution = (DFS if use_dfs else BFS)(b)
-        # print solved board
+        
         print("<<<<< Solved Board >>>>>")
         solution.print_pretty()
 
-    # sets of moves for the different games
     first_moves = [
         (0, 1, 7),
         (0, 7, 1),
@@ -221,20 +181,12 @@ if __name__ == "__main__":
         (8, 5, 7),
         (8, 7, 5),
     ]
-    #Create a sudoku board.
+
     b = Board()
-    #Place the 28 assignments in first_moves on the board.
+
     for trip in first_moves:
         b.rows[trip[0]][trip[1]] = trip[2]
-    b.print_pretty()
-    print(b)
-    sol = DFS(b)
-    sol.print_pretty()
-    #NOTE - the above code only *puts* the numbers on the board, but doesn't
-    #   do the work that update does (remove numbers from other lists, etc).
-
-    # #I'm going to now alter 3 lists on the board to make them shorter (more
-    # #   constrained. 
+    
     remove_if_exists(b.rows[0][0], 8)
     remove_if_exists(b.rows[0][0], 7)
     remove_if_exists(b.rows[0][0], 3)
@@ -248,8 +200,7 @@ if __name__ == "__main__":
     remove_if_exists(b.rows[6][7], 3)
     remove_if_exists(b.rows[6][7], 5)
     remove_if_exists(b.rows[6][7], 6)
-    # #we removed 5 items from positions (4,8) so that should now be the most
-    # #  constrained.
+    
     assert b.find_most_constrained_cell() == (4,8), "find most constrained cell test 1"
     assert b.failure_test() == False, "failure test test 1"
     assert b.goal_test() == False, "goal test test 1"
@@ -259,18 +210,11 @@ if __name__ == "__main__":
     assert b.failure_test() == True, "failure test test 2"
     print("All part 1 tests passed!")
 
-    # ##Now, let's write some quick tests to check update!
-    # #Create a sudoku board.
     g = Board()
-    # #Place the 28 assignments in first_moves on the board.
     for trip in first_moves:
         g.update(trip[0],trip[1],trip[2])
     g.print_pretty()
-    # #From the above print statement, you can see which numbers
-    # #  have been assigned to the board, and then create test
-    # #  cases by looking at the board and listing what values are
-    # #  still possible for a specific cell. I have created
-    # #  2 such test cases like that for you. 
+    
     assert g.rows[0][2] == [2,5,6], "update test 1"
     assert g.rows[5][5] == [3,7,9], "update test 2"
     assert g.num_nums_placed == 28, "update test 3"
@@ -296,4 +240,3 @@ if __name__ == "__main__":
     print("<<<<<<<<<<<<<< Testing BFS on Second Game >>>>>>>>>>>>>>")
 
     test_dfs_or_bfs(False, second_moves)
-    pass
